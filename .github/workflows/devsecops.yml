@@ -1,0 +1,39 @@
+name: DAST Temporary Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-dast:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        privileged: true
+        ports:
+          - 2375:2375
+    env:
+      DOCKER_HOST: tcp://localhost:2375
+      DOCKER_TLS_CERTDIR: ""
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: docker build -t vulnerable-app:latest .
+
+      - name: Run vulnerable app container
+        run: |
+          docker run -d -p 3000:3000 --name vulnapp vulnerable-app:latest
+          sleep 15
+
+      - name: Check app availability
+        run: curl -I http://localhost:3000
+
+      - name: Stop and remove container
+        run: |
+          docker stop vulnapp
+          docker rm vulnapp
