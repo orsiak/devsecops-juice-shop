@@ -1,24 +1,15 @@
-name: DAST Temporary Deployment
-
-on:
-  push:
-    branches:
-      - main
-
 jobs:
-  run-dast:
+  build:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:dind
-        privileged: true
-        ports:
-          - 2375:2375
     env:
       DOCKER_HOST: tcp://localhost:2375
       DOCKER_TLS_CERTDIR: ""
-
     steps:
+      - name: Set up Docker DinD
+        run: |
+          dockerd --host=tcp://0.0.0.0:2375 --host=unix:///var/run/docker.sock &
+          sleep 20
+
       - name: Checkout repo
         uses: actions/checkout@v3
 
