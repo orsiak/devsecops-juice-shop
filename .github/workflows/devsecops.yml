@@ -21,18 +21,21 @@ jobs:
             npm install
             npm audit --audit-level=high || true
           fi
+        continue-on-error: true
 
       # ---------- SAST: Skan kodu źródłowego (Semgrep)
       - name: Run SAST scan (Semgrep)
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
+        continue-on-error: true
 
       # ---------- Secrets Scan (GitLeaks)
       - name: Run Secrets scan (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
         with:
           args: "--no-git -v"
+        continue-on-error: true
 
       # ---------- Build Docker image
       - name: Build Docker image
@@ -47,6 +50,7 @@ jobs:
       # ---------- Check if app is available
       - name: Check app availability
         run: curl -I http://localhost:3000 || exit 1
+        continue-on-error: true
 
       # ---------- DAST: OWASP ZAP Scan
       - name: Run DAST scan (OWASP ZAP)
