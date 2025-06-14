@@ -77,7 +77,7 @@ jobs:
             zaproxy/zap-stable zap-baseline.py \  # <--- ZMIENIONA LINIA TUTAJ
             -t http://vulnapp:3000 \
             -r zap_report.html || true
-
+            -I || true
       # Upload ZAP report artifact
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
