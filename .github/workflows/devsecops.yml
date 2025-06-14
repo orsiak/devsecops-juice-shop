@@ -67,7 +67,7 @@ jobs:
           mkdir -p zap-output
           docker run --rm --net juice-net \
             -v $(pwd)/zap-output:/zap/wrk/:rw \
-            owasp/zap2docker-stable zap-baseline.py \
+            owasp/zaproxy/zap2docker-stable zap-baseline.py \
             -t http://vulnapp:3000 \
             -r zap_report.html || true
 
