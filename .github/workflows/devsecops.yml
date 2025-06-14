@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # ---------- SCA: Skan zależności (npm audit)
+      # SCA: npm audit
       - name: Run SCA scan (npm audit)
         run: |
           if [ -f package.json ]; then
@@ -28,53 +28,59 @@ jobs:
           fi
         continue-on-error: true
 
-      # ---------- SAST: Skan kodu źródłowego (Semgrep)
+      # SAST: Semgrep
       - name: Run SAST scan (Semgrep)
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
         continue-on-error: true
 
-      # ---------- Secrets Scan (Gitleaks)
+      # Secrets scan (Gitleaks)
       - name: Run Secrets scan (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
         with:
           args: "--no-git -v"
         continue-on-error: true
 
-      # ---------- Build Docker image (local)
+      # Build Docker image
       - name: Build Docker image
         run: docker build -t vulnapp:latest .
 
-      # ---------- Run vulnerable app container
+      # Create Docker network
+      - name: Create docker network
+        run: docker network create juice-net || true
+
+      # Run vulnerable app container in custom network
       - name: Run vulnerable app container
         run: |
-          docker run -d -p 3000:3000 --name vulnapp vulnapp:latest
+          docker run -d --net juice-net --name vulnapp vulnapp:latest
           sleep 15
 
-      # ---------- Check if app is available
+      # Check app availability
       - name: Check app availability
         run: curl -I http://localhost:3000 || exit 1
         continue-on-error: true
 
-      # ---------- DAST: OWASP ZAP Scan (działająca wersja)
+      # Run OWASP ZAP DAST scan in the same network
       - name: Run DAST scan (OWASP ZAP)
         run: |
           mkdir -p zap-output
-          docker run --rm --network="host" \
+          docker run --rm --net juice-net \
             -v $(pwd)/zap-output:/zap/wrk/:rw \
             owasp/zap2docker-stable zap-baseline.py \
-            -t http://localhost:3000 \
+            -t http://vulnapp:3000 \
             -r zap_report.html || true
 
+      # Upload ZAP report artifact
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
           path: zap-output/zap_report.html
 
-      # ---------- Stop and clean up container
+      # Stop and remove container
       - name: Stop and remove container
         run: |
           docker stop vulnapp
           docker rm vulnapp
+          docker network rm juice-net || true
