@@ -62,12 +62,13 @@ jobs:
 
 
 
-      # ---------- DAST: OWASP ZAP Scan
+      # ---------- DAST: OWASP ZAP Scan (działająca wersja)
       - name: Run DAST scan (OWASP ZAP)
         run: |
-          docker run --network=host -v $(pwd):/zap/wrk/:rw \
-            owasp/zap2docker-stable zap-baseline.py \
-            -t http://localhost:3000 -r zap_report.html || true
+          docker run --rm -v $(pwd):/zap/wrk \
+            ghcr.io/zaproxy/zaproxy zap-baseline.py \
+            -t http://host.docker.internal:3000 \
+            -r zap_report.html || true
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
