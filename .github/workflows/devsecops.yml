@@ -61,6 +61,13 @@ jobs:
         run: curl -I http://localhost:3000 || exit 1
         continue-on-error: true
 
+      # Docker login to Docker Hub
+      - name: Docker Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       # Run OWASP ZAP DAST scan in the same network
       - name: Run DAST scan (OWASP ZAP)
         run: |
@@ -78,7 +85,7 @@ jobs:
           name: zap-report
           path: zap-output/zap_report.html
 
-      # Stop and remove container
+      # Stop and remove container and network
       - name: Stop and remove container
         run: |
           docker stop vulnapp
