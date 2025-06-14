@@ -60,12 +60,20 @@ jobs:
         run: curl -I http://localhost:3000 || exit 1
         continue-on-error: true
 
+
+
       # ---------- DAST: OWASP ZAP Scan
       - name: Run DAST scan (OWASP ZAP)
-        uses: zaproxy/action-full-scan@v0.9.0
+        run: |
+          docker run --network=host -v $(pwd):/zap/wrk/:rw \
+            owasp/zap2docker-stable zap-baseline.py \
+            -t http://localhost:3000 -r zap_report.html || true
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
         with:
-          target: "http://localhost:3000"
-        continue-on-error: true
+          name: zap-report
+          path: zap_report.html
 
       # ---------- Stop and clean up container
       - name: Stop and remove container
