@@ -6,13 +6,10 @@ on:
       - main
   pull_request:
 
-
 permissions:
   contents: read
   issues: write
   pull-requests: write
-
-
 
 jobs:
   devsecops:
@@ -38,7 +35,7 @@ jobs:
           config: "p/default"
         continue-on-error: true
 
-      # ---------- Secrets Scan (GitLeaks)
+      # ---------- Secrets Scan (Gitleaks)
       - name: Run Secrets scan (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
         with:
@@ -60,21 +57,21 @@ jobs:
         run: curl -I http://localhost:3000 || exit 1
         continue-on-error: true
 
-
-
       # ---------- DAST: OWASP ZAP Scan (działająca wersja)
       - name: Run DAST scan (OWASP ZAP)
         run: |
-          docker run --rm -v $(pwd):/zap/wrk \
-            ghcr.io/zaproxy/zaproxy zap-baseline.py \
-            -t http://host.docker.internal:3000 \
+          mkdir -p zap-output
+          docker run --rm --network="host" \
+            -v $(pwd)/zap-output:/zap/wrk/:rw \
+            owasp/zap2docker-stable zap-baseline.py \
+            -t http://localhost:3000 \
             -r zap_report.html || true
 
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap_report.html
+          path: zap-output/zap_report.html
 
       # ---------- Stop and clean up container
       - name: Stop and remove container
